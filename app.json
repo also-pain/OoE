@@ -1,25 +1,59 @@
 {
   "expo": {
-    "name": "ooe_scaffold",
-    "slug": "ooe_scaffold",
+    "name": "MySlot",
+    "slug": "myslot",
+    "scheme": [
+      "ooe",
+      "myslot",
+      "com.ooe.orderevents",
+      "com.googleusercontent.apps.655342982666-8pkl9auip4mulmjmdm5jk0h4oj6677vp"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ooe.orderevents"
     },
     "android": {
+      "package": "com.ooe.orderevents",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
     },
+    "plugins": [
+      "expo-web-browser",
+      "@react-native-community/datetimepicker",
+      "expo-system-ui",
+      [
+        "expo-notifications",
+        {
+          "color": "#0F1E36"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MySlot uses your photo library to attach optional images to events.",
+          "cameraPermission": "MySlot uses your camera to attach optional photos to events."
+        }
+      ],
+      "./plugins/withMySlotWidget"
+    ],
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "MySlot — Order of Events",
+      "shortName": "MySlot",
+      "themeColor": "#0F1E36",
+      "backgroundColor": "#FFFFFF"
+    },
+    "experiments": {
+      "baseUrl": "/OoE"
     }
   }
 }
