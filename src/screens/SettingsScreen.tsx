@@ -77,10 +77,16 @@ export function SettingsScreen() {
   const oauthConfigured = isGoogleOAuthConfigured();
   const oauthConfig = getGoogleOAuthConfig();
 
+  const webRedirectUri =
+    isWeb && typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname.replace(/\/+$/, '')}/`
+      : undefined;
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: oauthConfig.iosClientId || 'placeholder-ios-client-id',
     androidClientId: oauthConfig.androidClientId || 'placeholder-android-client-id',
     webClientId: oauthConfig.webClientId || 'placeholder-web-client-id',
+    redirectUri: webRedirectUri,
     scopes: [
       'profile',
       'email',
