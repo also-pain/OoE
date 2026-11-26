@@ -29,7 +29,7 @@ const REMINDER_PRESETS = [
   { label: '30m', hours: 0.5 },
   { label: '1h', hours: 1 },
   { label: '2h', hours: 2 },
-  { label: '3h (Default)', hours: 3 },
+  { label: '3h', hours: 3 },
   { label: '6h', hours: 6 },
   { label: '12h', hours: 12 },
   { label: '24h', hours: 24 },
@@ -418,9 +418,9 @@ export function SettingsScreen() {
         </View>
       </View>
 
-      {/* Section 3: Reminder Preferences */}
+      {/* Section 3: Reminders & Alarm */}
       <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>
-        REMINDER PREFERENCES
+        REMINDERS &amp; ALARM
       </Text>
       <View
         style={[
@@ -455,13 +455,27 @@ export function SettingsScreen() {
         )}
 
         <View style={[styles.toggleRowNoBorder, isWeb && styles.disabledSection]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.toggleTitle, { color: themeColors.textPrimary }]}>
-              Event Reminders
-            </Text>
-            <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
-              Currently alerting {formatReminderLeadTime(preferences.reminderHoursBefore)}
-            </Text>
+          <View style={styles.toggleIconRow}>
+            <View
+              style={[
+                styles.settingIconBox,
+                { backgroundColor: themeColors.primaryTint },
+              ]}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={18}
+                color={themeColors.primary}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.toggleTitle, { color: themeColors.textPrimary }]}>
+                Advance Reminder
+              </Text>
+              <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
+                Notify {formatReminderLeadTime(preferences.reminderHoursBefore)}
+              </Text>
+            </View>
           </View>
           <Switch
             value={isWeb ? false : preferences.notificationsEnabled}
@@ -483,13 +497,27 @@ export function SettingsScreen() {
             isWeb && styles.disabledSection,
           ]}
         >
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.toggleTitle, { color: themeColors.textPrimary }]}>
-              Alarm Ring at Event Time
-            </Text>
-            <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
-              Ring phone like an alarm when the event starts
-            </Text>
+          <View style={styles.toggleIconRow}>
+            <View
+              style={[
+                styles.settingIconBox,
+                { backgroundColor: themeColors.amberBg },
+              ]}
+            >
+              <Ionicons
+                name="alarm-outline"
+                size={18}
+                color={themeColors.amber}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.toggleTitle, { color: themeColors.textPrimary }]}>
+                Alarm Ring at Event Time
+              </Text>
+              <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
+                Ring phone like an alarm when event starts
+              </Text>
+            </View>
           </View>
           <Switch
             value={isWeb ? false : preferences.ringOnEvent}
@@ -526,12 +554,22 @@ export function SettingsScreen() {
         )}
 
         <View
-          style={isWeb ? styles.disabledSection : undefined}
-          pointerEvents={isWeb ? 'none' : 'auto'}
+          style={[
+            styles.leadTimeSection,
+            { borderTopColor: themeColors.border },
+            (isWeb || !preferences.notificationsEnabled) && styles.disabledSection,
+          ]}
+          pointerEvents={isWeb || !preferences.notificationsEnabled ? 'none' : 'auto'}
         >
-          <Text style={[styles.subLabel, { color: themeColors.textMuted }]}>
-            REMIND ME BEFORE EVENT
-          </Text>
+          <View style={styles.leadHeaderRow}>
+            <Text style={[styles.subLabel, { color: themeColors.textMuted }]}>
+              REMINDER LEAD TIME
+            </Text>
+            <Text style={[styles.defaultHint, { color: themeColors.textMuted }]}>
+              Default: 3h
+            </Text>
+          </View>
+
           <View style={styles.presetGrid}>
             {REMINDER_PRESETS.map((preset) => {
               const active =
@@ -551,7 +589,7 @@ export function SettingsScreen() {
                         : themeColors.borderStrong,
                       backgroundColor: active
                         ? themeColors.primary
-                        : themeColors.card,
+                        : themeColors.canvas,
                     },
                   ]}
                   activeOpacity={0.8}
@@ -574,10 +612,13 @@ export function SettingsScreen() {
           </View>
 
           <Text style={[styles.subLabel, { color: themeColors.textMuted }]}>
-            CUSTOM REMINDER (HOURS &amp; MINUTES BEFORE)
+            CUSTOM TIME BEFORE EVENT
           </Text>
           <View style={styles.customRow}>
-            <View style={styles.unitInputWrap}>
+            <View style={styles.unitCol}>
+              <Text style={[styles.unitCaption, { color: themeColors.textMuted }]}>
+                Hours
+              </Text>
               <TextInput
                 value={customHours}
                 editable={!isWeb}
@@ -595,12 +636,12 @@ export function SettingsScreen() {
                 placeholderTextColor={themeColors.textMuted}
                 maxLength={3}
               />
-              <Text style={[styles.unitLabel, { color: themeColors.textMuted }]}>
-                hrs
-              </Text>
             </View>
 
-            <View style={styles.unitInputWrap}>
+            <View style={styles.unitCol}>
+              <Text style={[styles.unitCaption, { color: themeColors.textMuted }]}>
+                Minutes
+              </Text>
               <TextInput
                 value={customMinutes}
                 editable={!isWeb}
@@ -618,9 +659,6 @@ export function SettingsScreen() {
                 placeholderTextColor={themeColors.textMuted}
                 maxLength={2}
               />
-              <Text style={[styles.unitLabel, { color: themeColors.textMuted }]}>
-                mins
-              </Text>
             </View>
 
             <TouchableOpacity
@@ -630,7 +668,7 @@ export function SettingsScreen() {
               activeOpacity={0.85}
             >
               <Text style={[styles.applyBtnText, { color: themeColors.textInverse }]}>
-                Apply
+                Set
               </Text>
             </TouchableOpacity>
           </View>
@@ -732,17 +770,46 @@ const styles = StyleSheet.create({
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.md,
     borderTopWidth: 1,
     paddingTop: spacing.md,
     marginTop: spacing.xs,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   toggleRowNoBorder: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.md,
     marginBottom: spacing.md,
+  },
+  toggleIconRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  settingIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leadTimeSection: {
+    borderTopWidth: 1,
+    paddingTop: spacing.md,
+    marginTop: spacing.xs,
+  },
+  leadHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  defaultHint: {
+    ...typography.labelSm,
   },
   toggleTitle: {
     ...typography.headlineSm,
@@ -823,27 +890,28 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   presetChip: {
+    width: '23%',
     borderWidth: 1,
     borderRadius: radius.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
+    paddingVertical: 9,
+    alignItems: 'center',
   },
   presetChipText: {
     ...typography.labelMd,
   },
   customRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: spacing.sm,
   },
-  unitInputWrap: {
+  unitCol: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  },
+  unitCaption: {
+    ...typography.labelSm,
+    marginBottom: 4,
   },
   customInput: {
-    flex: 1,
     borderWidth: 1,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
@@ -851,12 +919,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     ...typography.labelMd,
   },
-  unitLabel: {
-    ...typography.labelSm,
-  },
   applyBtn: {
     borderRadius: radius.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingVertical: 11,
     justifyContent: 'center',
   },
