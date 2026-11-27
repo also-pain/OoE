@@ -7,8 +7,8 @@ interface WidgetBridgeNative {
 }
 
 /**
- * Updates the Android Home Screen Widget with today's time-sorted events.
- * Safe no-op on iOS, Web, or when the native bridge is unavailable.
+ * Updates all Android Home Screen Widgets (Today List, Up Next Spotlight, Quick Add)
+ * with today's time-sorted events. Safe no-op on iOS and Web.
  */
 export function syncAndroidWidget(events: OoEvent[]): void {
   if (Platform.OS !== 'android') return;
@@ -43,6 +43,14 @@ export function syncAndroidWidget(events: OoEvent[]): void {
       day: 'numeric',
     }),
     totalToday: queue.allToday.length,
+    upNext: queue.upNext
+      ? {
+          time: formatTime12h(queue.upNext.dateTimeIso),
+          occasion: queue.upNext.occasion,
+          place: queue.upNext.place,
+          organiser: queue.upNext.organiser,
+        }
+      : null,
     items,
   });
 

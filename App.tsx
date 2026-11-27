@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -13,6 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { OoEProvider, useOoE } from './src/context/OoEContext';
 import { radius, spacing, ThemeColors, typography } from './src/theme/tokens';
 import { AppTab, EventDraft, OoEvent } from './src/types/event';
+import {
+  checkForGitHubUpdate,
+  UpdateCheckResult,
+} from './src/services/updateService';
 import { ExecutiveHeader } from './src/components/ExecutiveHeader';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { CalendarScreen } from './src/screens/CalendarScreen';
@@ -35,6 +40,40 @@ function OoEShell() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState<OoEvent | null>(null);
   const [modalInitialDate, setModalInitialDate] = useState<Date | undefined>(undefined);
+  const [availableUpdate, setAvailableUpdate] = useState<UpdateCheckResult | null>(
+    null
+  );
+
+  useEffect(() => {
+    const handleUrl = (url: string | null | undefined) => {
+      if (!url) return;
+      if (url.startsWith('myslot://add')) {
+        setEditingEvent(null);
+        setModalInitialDate(undefined);
+        setActiveTab('today');
+        setModalVisible(true);
+      }
+    };
+
+    void Linking.getInitialURL().then(handleUrl);
+    const sub = Linking.addEventListener('url', (ev) => handleUrl(ev.url));
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    let mounted = true;
+    void checkForGitHubUpdate()
+      .then((res) => {
+        if (mounted && res.hasUpdate) {
+          setAvailableUpdate(res);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const openNewEventModal = (date?: Date) => {
     setEditingEvent(null);
@@ -54,6 +93,7 @@ function OoEShell() {
     } else {
       await addEvent(draft);
     }
+    setModalVisible(false);
   };
 
   return (
@@ -68,6 +108,52 @@ function OoEShell() {
         syncState={syncState}
         onPressSyncBadge={() => setActiveTab('settings')}
       />
+
+      {availableUpdate && (
+        <View
+          style={[
+            styles.updateBanner,
+            {
+              backgroundColor: themeColors.amberBg,
+              borderBottomColor: themeColors.amberBorder,
+            },
+          ]}
+        >
+          <Ionicons
+            name="arrow-up-circle-outline"
+            size={18}
+            color={themeColors.amber}
+          />
+          <Text
+            style={[styles.updateBannerText, { color: themeColors.amber }]}
+            numberOfLines={1}
+          >
+            Update {availableUpdate.tagName} available
+          </Text>
+          <TouchableOpacity
+            onPress={() => void Linking.openURL(availableUpdate.downloadUrl)}
+            style={[
+              styles.updateBannerBtn,
+              { backgroundColor: themeColors.primary },
+            ]}
+          >
+            <Text
+              style={[
+                styles.updateBannerBtnText,
+                { color: themeColors.textInverse },
+              ]}
+            >
+              Update
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setAvailableUpdate(null)}
+            style={{ padding: 4 }}
+          >
+            <Ionicons name="close" size={16} color={themeColors.amber} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={[styles.body, { backgroundColor: themeColors.canvas }]}>
         {isLoading ? (
@@ -294,5 +380,27 @@ const styles = StyleSheet.create({
     top: 0,
     width: 36,
     height: 2.5,
+  },
+  updateBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+  updateBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  updateBannerBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.xs,
+  },
+  updateBannerBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

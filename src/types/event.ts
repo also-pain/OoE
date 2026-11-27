@@ -8,6 +8,12 @@ export interface OoEvent {
   place: string;
   /** Name of the organiser (Field 4) */
   organiser: string;
+  /** Optional contact phone number */
+  phone?: string;
+  /** Optional contact email */
+  email?: string;
+  /** Optional additional notes / remarks */
+  notes?: string;
   /** Optional attached image URI from camera or gallery */
   imageUri?: string;
   createdAt: string;
@@ -23,6 +29,9 @@ export interface EventDraft {
   occasion: string;
   place: string;
   organiser: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
   imageUri?: string;
 }
 

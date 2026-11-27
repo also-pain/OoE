@@ -3,6 +3,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -22,6 +23,7 @@ import { radius, spacing, typography } from '../theme/tokens';
 import { useOoE } from '../context/OoEContext';
 import { EventDraft, OoEvent } from '../types/event';
 import { formatReminderLeadTime } from '../utils/eventUtils';
+import { ImageViewerModal } from '../components/ImageViewerModal';
 
 interface EventFormModalProps {
   visible: boolean;
@@ -47,7 +49,11 @@ export function EventFormModal({
   const [occasion, setOccasion] = useState('');
   const [place, setPlace] = useState('');
   const [organiser, setOrganiser] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [notes, setNotes] = useState('');
   const [imageUri, setImageUri] = useState<string | undefined>(undefined);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -57,12 +63,16 @@ export function EventFormModal({
     if (!visible) return;
     setError(null);
     setShowPickerMode(null);
+    setViewerOpen(false);
 
     if (initialEvent) {
       setDateTime(new Date(initialEvent.dateTimeIso));
       setOccasion(initialEvent.occasion);
       setPlace(initialEvent.place);
       setOrganiser(initialEvent.organiser);
+      setPhone(initialEvent.phone ?? '');
+      setEmail(initialEvent.email ?? '');
+      setNotes(initialEvent.notes ?? '');
       setImageUri(initialEvent.imageUri);
     } else {
       const base = initialDate ? new Date(initialDate) : new Date();
@@ -75,6 +85,9 @@ export function EventFormModal({
       setOccasion('');
       setPlace('');
       setOrganiser('');
+      setPhone('');
+      setEmail('');
+      setNotes('');
       setImageUri(undefined);
     }
   }, [visible, initialEvent, initialDate]);
@@ -159,6 +172,9 @@ export function EventFormModal({
         occasion: occasion.trim(),
         place: place.trim(),
         organiser: organiser.trim(),
+        phone: phone.trim() || undefined,
+        email: email.trim() || undefined,
+        notes: notes.trim() || undefined,
         imageUri,
       });
       onClose();
@@ -270,10 +286,14 @@ export function EventFormModal({
               </View>
             )}
 
+            <Text style={[styles.sectionTitle, { color: themeColors.textMuted }]}>
+              REQUIRED DETAILS
+            </Text>
+
             {/* Field 1: Date & Time */}
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { color: themeColors.textMuted }]}>
-                1. DATE &amp; TIME *
+                DATE &amp; TIME *
               </Text>
               <View style={styles.dateTimeRow}>
                 <TouchableOpacity
@@ -503,7 +523,7 @@ export function EventFormModal({
             {/* Field 2: Occasion */}
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { color: themeColors.textMuted }]}>
-                2. OCCASION (SHORT DESCRIPTION) *
+                OCCASION (SHORT DESCRIPTION) *
               </Text>
               <TextInput
                 value={occasion}
@@ -527,7 +547,7 @@ export function EventFormModal({
             {/* Field 3: Place / Location */}
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { color: themeColors.textMuted }]}>
-                3. PLACE / LOCATION *
+                PLACE / LOCATION *
               </Text>
               <View
                 style={[
@@ -558,7 +578,7 @@ export function EventFormModal({
             {/* Field 4: Organiser */}
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { color: themeColors.textMuted }]}>
-                4. ORGANISER *
+                ORGANISER *
               </Text>
               <View
                 style={[
@@ -586,10 +606,145 @@ export function EventFormModal({
               </View>
             </View>
 
-            {/* Optional Attachment: Camera or Gallery */}
+            <View
+              style={[styles.divider, { backgroundColor: themeColors.border }]}
+            />
+            <Text style={[styles.sectionTitle, { color: themeColors.textMuted }]}>
+              OPTIONAL DETAILS
+            </Text>
+
+            {/* Optional Field 5: Phone No. */}
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { color: themeColors.textMuted }]}>
-                5. ATTACHMENT (OPTIONAL)
+                PHONE NO.
+              </Text>
+              <View
+                style={[
+                  styles.inputWithIcon,
+                  {
+                    backgroundColor: themeColors.card,
+                    borderColor: themeColors.border,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="call-outline"
+                  size={17}
+                  color={themeColors.textMuted}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="e.g., +91 98765 43210"
+                  placeholderTextColor={themeColors.textMuted}
+                  keyboardType="phone-pad"
+                  style={[styles.iconInputText, { color: themeColors.textPrimary }]}
+                  maxLength={24}
+                />
+                {Boolean(phone.trim()) && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      void Linking.openURL(`tel:${phone.replace(/[^+\d]/g, '')}`)
+                    }
+                    style={[
+                      styles.inlineActionBtn,
+                      { backgroundColor: themeColors.primaryTint },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.inlineActionText,
+                        { color: themeColors.primary },
+                      ]}
+                    >
+                      Call
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Optional Field 6: Email */}
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: themeColors.textMuted }]}>
+                EMAIL
+              </Text>
+              <View
+                style={[
+                  styles.inputWithIcon,
+                  {
+                    backgroundColor: themeColors.card,
+                    borderColor: themeColors.border,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="mail-outline"
+                  size={17}
+                  color={themeColors.textMuted}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="e.g., office@example.com"
+                  placeholderTextColor={themeColors.textMuted}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={[styles.iconInputText, { color: themeColors.textPrimary }]}
+                  maxLength={100}
+                />
+                {Boolean(email.trim()) && (
+                  <TouchableOpacity
+                    onPress={() => void Linking.openURL(`mailto:${email.trim()}`)}
+                    style={[
+                      styles.inlineActionBtn,
+                      { backgroundColor: themeColors.primaryTint },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.inlineActionText,
+                        { color: themeColors.primary },
+                      ]}
+                    >
+                      Mail
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Optional Field 7: Additional Notes */}
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: themeColors.textMuted }]}>
+                ADDITIONAL NOTES
+              </Text>
+              <TextInput
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Talking points, protocol, gate pass, or extra info..."
+                placeholderTextColor={themeColors.textMuted}
+                style={[
+                  styles.input,
+                  styles.multilineInput,
+                  {
+                    backgroundColor: themeColors.card,
+                    borderColor: themeColors.border,
+                    color: themeColors.textPrimary,
+                  },
+                ]}
+                multiline
+                maxLength={400}
+              />
+            </View>
+
+            {/* Optional Field 8: Attachment */}
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: themeColors.textMuted }]}>
+                PHOTO ATTACHMENT
               </Text>
               <View style={styles.dateTimeRow}>
                 {Platform.OS !== 'web' && (
@@ -649,11 +804,22 @@ export function EventFormModal({
 
               {imageUri && (
                 <View style={styles.previewWrap}>
-                  <Image
-                    source={{ uri: imageUri }}
-                    style={[styles.previewImg, { borderColor: themeColors.border }]}
-                    resizeMode="cover"
-                  />
+                  <TouchableOpacity
+                    activeOpacity={0.88}
+                    onPress={() => setViewerOpen(true)}
+                    style={styles.previewTouch}
+                  >
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={[styles.previewImg, { borderColor: themeColors.border }]}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.expandOverlay}>
+                      <Ionicons name="expand-outline" size={14} color="#FFFFFF" />
+                      <Text style={styles.expandText}>Tap to view</Text>
+                    </View>
+                  </TouchableOpacity>
+
                   <TouchableOpacity
                     onPress={() => setImageUri(undefined)}
                     style={[
@@ -743,6 +909,13 @@ export function EventFormModal({
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      <ImageViewerModal
+        visible={viewerOpen}
+        imageUri={imageUri ?? null}
+        title={occasion || 'Event Photo'}
+        onClose={() => setViewerOpen(false)}
+      />
     </Modal>
   );
 }
@@ -787,7 +960,16 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    paddingBottom: 40,
+    paddingBottom: 48,
+  },
+  sectionTitle: {
+    ...typography.labelSm,
+    marginBottom: spacing.md,
+  },
+  divider: {
+    height: 1,
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
   },
   errorBanner: {
     flexDirection: 'row',
@@ -803,11 +985,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fieldGroup: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   fieldLabel: {
     ...typography.labelSm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   dateTimeRow: {
     flexDirection: 'row',
@@ -870,7 +1052,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   multilineInput: {
-    minHeight: 76,
+    minHeight: 72,
     textAlignVertical: 'top',
   },
   inputWithIcon: {
@@ -888,6 +1070,16 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
   },
+  inlineActionBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.xs,
+    marginLeft: 6,
+  },
+  inlineActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   reminderInfoCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -895,6 +1087,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.sm,
     padding: spacing.md,
+    marginTop: spacing.xs,
     marginBottom: spacing.xl,
   },
   reminderInfoText: {
@@ -931,11 +1124,31 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     gap: spacing.sm,
   },
+  previewTouch: {
+    position: 'relative',
+  },
   previewImg: {
     width: '100%',
     height: 160,
     borderRadius: radius.sm,
     borderWidth: 1,
+  },
+  expandOverlay: {
+    position: 'absolute',
+    right: 8,
+    bottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(15, 30, 54, 0.78)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.xs,
+  },
+  expandText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
   },
   removeImgBtn: {
     flexDirection: 'row',

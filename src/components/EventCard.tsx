@@ -1,5 +1,13 @@
-import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  GestureResponderEvent,
+  Image,
+  Linking,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { radius, spacing, typography } from '../theme/tokens';
 import { useOoE } from '../context/OoEContext';
@@ -9,6 +17,7 @@ import {
   formatReminderLeadTime,
   formatTime12h,
 } from '../utils/eventUtils';
+import { ImageViewerModal } from './ImageViewerModal';
 
 interface EventCardProps {
   event: OoEvent;
@@ -28,40 +37,272 @@ export function EventCard({
   onPress,
 }: EventCardProps) {
   const { themeColors } = useOoE();
+  const [viewerOpen, setViewerOpen] = useState(false);
+
   const timeLabel = formatTime12h(event.dateTimeIso);
   const countdown = formatCountdown(event.dateTimeIso);
   const reminderLabel = formatReminderLeadTime(reminderHoursBefore);
   const isLive = countdown === 'In Session';
 
+  const handleCall = (e: GestureResponderEvent) => {
+    e.stopPropagation();
+    if (!event.phone) return;
+    const cleaned = event.phone.replace(/[^+\d]/g, '');
+    void Linking.openURL(`tel:${cleaned}`);
+  };
+
+  const handleEmail = (e: GestureResponderEvent) => {
+    e.stopPropagation();
+    if (!event.email) return;
+    void Linking.openURL(`mailto:${event.email.trim()}`);
+  };
+
+  const handleOpenImage = (e: GestureResponderEvent) => {
+    e.stopPropagation();
+    if (!event.imageUri) return;
+    setViewerOpen(true);
+  };
+
+  const contactChips = (event.phone || event.email) && (
+    <View style={styles.actionChipRow}>
+      {event.phone && (
+        <TouchableOpacity
+          onPress={handleCall}
+          activeOpacity={0.75}
+          style={[
+            styles.actionChip,
+            {
+              backgroundColor: themeColors.primaryTint,
+              borderColor: themeColors.primaryBorder,
+            },
+          ]}
+        >
+          <Ionicons name="call-outline" size={13} color={themeColors.primary} />
+          <Text
+            style={[styles.actionChipText, { color: themeColors.primary }]}
+            numberOfLines={1}
+          >
+            {event.phone}
+          </Text>
+        </TouchableOpacity>
+      )}
+      {event.email && (
+        <TouchableOpacity
+          onPress={handleEmail}
+          activeOpacity={0.75}
+          style={[
+            styles.actionChip,
+            {
+              backgroundColor: themeColors.primaryTint,
+              borderColor: themeColors.primaryBorder,
+            },
+          ]}
+        >
+          <Ionicons name="mail-outline" size={13} color={themeColors.primary} />
+          <Text
+            style={[styles.actionChipText, { color: themeColors.primary }]}
+            numberOfLines={1}
+          >
+            {event.email}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
   if (variant === 'hero') {
     return (
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => onPress(event)}
-        style={[
-          styles.heroCard,
-          {
-            backgroundColor: themeColors.card,
-            borderColor: themeColors.primary,
-            borderLeftColor: themeColors.amberBright,
-            shadowColor: themeColors.primaryDark,
-          },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={`Up next: ${event.occasion} at ${timeLabel}`}
-      >
-        <View style={styles.heroTopRow}>
-          <View style={styles.heroTimeGroup}>
-            <Text style={[styles.heroTime, { color: themeColors.primary }]}>
+      <>
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => onPress(event)}
+          style={[
+            styles.heroCard,
+            {
+              backgroundColor: themeColors.card,
+              borderColor: themeColors.primary,
+              borderLeftColor: themeColors.amberBright,
+              shadowColor: themeColors.primaryDark,
+            },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={`Up next: ${event.occasion} at ${timeLabel}`}
+        >
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroTimeGroup}>
+              <Text style={[styles.heroTime, { color: themeColors.primary }]}>
+                {timeLabel}
+              </Text>
+              <View
+                style={[
+                  styles.badge,
+                  isLive
+                    ? {
+                        backgroundColor: themeColors.emeraldBg,
+                        borderColor: themeColors.emeraldBorder,
+                      }
+                    : {
+                        backgroundColor: themeColors.amberBg,
+                        borderColor: themeColors.amberBorder,
+                      },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.badgeDot,
+                    {
+                      backgroundColor: isLive
+                        ? themeColors.emerald
+                        : themeColors.amberBright,
+                    },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.badgeText,
+                    { color: isLive ? themeColors.emeraldText : themeColors.amber },
+                  ]}
+                >
+                  {countdown.toUpperCase()}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.reminderTag}>
+              <Ionicons
+                name="notifications-outline"
+                size={12}
+                color={themeColors.textMuted}
+              />
+              <Text style={[styles.reminderTagText, { color: themeColors.textMuted }]}>
+                {reminderLabel}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={[styles.heroOccasion, { color: themeColors.textPrimary }]}>
+            {event.occasion}
+          </Text>
+
+          <View style={styles.metaList}>
+            <View style={styles.metaRow}>
+              <Ionicons name="location-outline" size={15} color={themeColors.primary} />
+              <Text
+                style={[styles.metaText, { color: themeColors.textSecondary }]}
+                numberOfLines={1}
+              >
+                {event.place}
+              </Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Ionicons name="person-outline" size={15} color={themeColors.primary} />
+              <Text
+                style={[styles.metaText, { color: themeColors.textSecondary }]}
+                numberOfLines={1}
+              >
+                {event.organiser}
+              </Text>
+            </View>
+          </View>
+
+          {event.notes && (
+            <Text
+              style={[styles.notesPreview, { color: themeColors.textMuted }]}
+              numberOfLines={2}
+            >
+              {event.notes}
+            </Text>
+          )}
+
+          {contactChips}
+
+          {event.imageUri && (
+            <TouchableOpacity
+              onPress={handleOpenImage}
+              activeOpacity={0.85}
+              style={styles.attachmentWrap}
+            >
+              <Image
+                source={{ uri: event.imageUri }}
+                style={[styles.heroAttachment, { borderColor: themeColors.border }]}
+                resizeMode="cover"
+              />
+              <View style={styles.expandOverlay}>
+                <Ionicons name="expand-outline" size={14} color="#FFFFFF" />
+                <Text style={styles.expandText}>Tap to view</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </TouchableOpacity>
+
+        <ImageViewerModal
+          visible={viewerOpen}
+          imageUri={event.imageUri ?? null}
+          title={event.occasion}
+          onClose={() => setViewerOpen(false)}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <View style={styles.timelineRow}>
+        <View style={styles.railCol}>
+          <View
+            style={[
+              styles.railNode,
+              { backgroundColor: themeColors.card },
+              isConcluded
+                ? {
+                    borderColor: themeColors.borderStrong,
+                    backgroundColor: themeColors.cardMuted,
+                  }
+                : isLive
+                  ? {
+                      borderColor: themeColors.emerald,
+                      backgroundColor: themeColors.emerald,
+                    }
+                  : { borderColor: themeColors.primary },
+            ]}
+          />
+          {!isLast && (
+            <View style={[styles.railLine, { backgroundColor: themeColors.border }]} />
+          )}
+        </View>
+
+        <TouchableOpacity
+          activeOpacity={0.82}
+          onPress={() => onPress(event)}
+          style={[
+            styles.queueCard,
+            {
+              backgroundColor: isConcluded
+                ? themeColors.cardConcluded
+                : themeColors.card,
+              borderColor: themeColors.border,
+            },
+            isConcluded && styles.queueCardConcluded,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={`${event.occasion} at ${timeLabel}`}
+        >
+          <View style={styles.queueTopRow}>
+            <Text
+              style={[
+                styles.queueTime,
+                { color: isConcluded ? themeColors.textMuted : themeColors.primary },
+              ]}
+            >
               {timeLabel}
             </Text>
             <View
               style={[
-                styles.badge,
-                isLive
+                styles.smallBadge,
+                isConcluded
                   ? {
-                      backgroundColor: themeColors.emeraldBg,
-                      borderColor: themeColors.emeraldBorder,
+                      backgroundColor: themeColors.cardMuted,
+                      borderColor: themeColors.borderStrong,
                     }
                   : {
                       backgroundColor: themeColors.amberBg,
@@ -69,195 +310,137 @@ export function EventCard({
                     },
               ]}
             >
-              <View
-                style={[
-                  styles.badgeDot,
-                  {
-                    backgroundColor: isLive
-                      ? themeColors.emerald
-                      : themeColors.amberBright,
-                  },
-                ]}
-              />
               <Text
                 style={[
-                  styles.badgeText,
-                  { color: isLive ? themeColors.emeraldText : themeColors.amber },
+                  styles.smallBadgeText,
+                  { color: isConcluded ? themeColors.textMuted : themeColors.amber },
                 ]}
               >
-                {countdown.toUpperCase()}
+                {isConcluded ? 'CONCLUDED' : countdown.toUpperCase()}
               </Text>
             </View>
           </View>
 
-          <View style={styles.reminderTag}>
-            <Ionicons
-              name="notifications-outline"
-              size={12}
-              color={themeColors.textMuted}
-            />
-            <Text style={[styles.reminderTagText, { color: themeColors.textMuted }]}>
-              {reminderLabel}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={[styles.heroOccasion, { color: themeColors.textPrimary }]}>
-          {event.occasion}
-        </Text>
-
-        <View style={styles.metaList}>
-          <View style={styles.metaRow}>
-            <Ionicons name="location-outline" size={15} color={themeColors.primary} />
-            <Text
-              style={[styles.metaText, { color: themeColors.textSecondary }]}
-              numberOfLines={1}
-            >
-              {event.place}
-            </Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Ionicons name="person-outline" size={15} color={themeColors.primary} />
-            <Text
-              style={[styles.metaText, { color: themeColors.textSecondary }]}
-              numberOfLines={1}
-            >
-              {event.organiser}
-            </Text>
-          </View>
-        </View>
-        {event.imageUri && (
-          <Image
-            source={{ uri: event.imageUri }}
-            style={[styles.heroAttachment, { borderColor: themeColors.border }]}
-            resizeMode="cover"
-          />
-        )}
-      </TouchableOpacity>
-    );
-  }
-
-  return (
-    <View style={styles.timelineRow}>
-      <View style={styles.railCol}>
-        <View
-          style={[
-            styles.railNode,
-            { backgroundColor: themeColors.card },
-            isConcluded
-              ? {
-                  borderColor: themeColors.borderStrong,
-                  backgroundColor: themeColors.cardMuted,
-                }
-              : isLive
-                ? {
-                    borderColor: themeColors.emerald,
-                    backgroundColor: themeColors.emerald,
-                  }
-                : { borderColor: themeColors.primary },
-          ]}
-        />
-        {!isLast && (
-          <View style={[styles.railLine, { backgroundColor: themeColors.border }]} />
-        )}
-      </View>
-
-      <TouchableOpacity
-        activeOpacity={0.8}
-        onPress={() => onPress(event)}
-        style={[
-          styles.queueCard,
-          {
-            backgroundColor: isConcluded
-              ? themeColors.cardConcluded
-              : themeColors.card,
-            borderColor: themeColors.border,
-          },
-          isConcluded && styles.queueCardConcluded,
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={`${event.occasion} at ${timeLabel}`}
-      >
-        <View style={styles.queueTopRow}>
           <Text
             style={[
-              styles.queueTime,
-              { color: isConcluded ? themeColors.textMuted : themeColors.primary },
+              styles.queueOccasion,
+              { color: isConcluded ? themeColors.textMuted : themeColors.textPrimary },
             ]}
+            numberOfLines={2}
           >
-            {timeLabel}
+            {event.occasion}
           </Text>
-          <View
-            style={[
-              styles.smallBadge,
-              isConcluded
-                ? {
-                    backgroundColor: themeColors.cardMuted,
-                    borderColor: themeColors.borderStrong,
-                  }
-                : {
-                    backgroundColor: themeColors.amberBg,
-                    borderColor: themeColors.amberBorder,
-                  },
-            ]}
-          >
-            <Text
-              style={[
-                styles.smallBadgeText,
-                { color: isConcluded ? themeColors.textMuted : themeColors.amber },
-              ]}
-            >
-              {isConcluded ? 'CONCLUDED' : countdown.toUpperCase()}
-            </Text>
-          </View>
-        </View>
 
-        <Text
-          style={[
-            styles.queueOccasion,
-            { color: isConcluded ? themeColors.textMuted : themeColors.textPrimary },
-          ]}
-          numberOfLines={2}
-        >
-          {event.occasion}
-        </Text>
-
-        <View style={styles.queueMetaRow}>
-          <View style={styles.queueMetaItem}>
-            <Ionicons name="location-outline" size={13} color={themeColors.textMuted} />
-            <Text
-              style={[styles.queueMetaText, { color: themeColors.textMuted }]}
-              numberOfLines={1}
-            >
-              {event.place}
-            </Text>
-          </View>
-          <View style={styles.queueMetaItem}>
-            <Ionicons name="person-outline" size={13} color={themeColors.textMuted} />
-            <Text
-              style={[styles.queueMetaText, { color: themeColors.textMuted }]}
-              numberOfLines={1}
-            >
-              {event.organiser}
-            </Text>
-          </View>
-          {event.imageUri && (
+          <View style={styles.queueMetaRow}>
             <View style={styles.queueMetaItem}>
-              <Ionicons name="image-outline" size={13} color={themeColors.primary} />
-              <Text style={[styles.queueMetaText, { color: themeColors.primary }]}>
-                Photo
+              <Ionicons name="location-outline" size={13} color={themeColors.textMuted} />
+              <Text
+                style={[styles.queueMetaText, { color: themeColors.textMuted }]}
+                numberOfLines={1}
+              >
+                {event.place}
               </Text>
             </View>
+            <View style={styles.queueMetaItem}>
+              <Ionicons name="person-outline" size={13} color={themeColors.textMuted} />
+              <Text
+                style={[styles.queueMetaText, { color: themeColors.textMuted }]}
+                numberOfLines={1}
+              >
+                {event.organiser}
+              </Text>
+            </View>
+          </View>
+
+          {event.notes && (
+            <Text
+              style={[styles.notesPreview, { color: themeColors.textMuted }]}
+              numberOfLines={2}
+            >
+              {event.notes}
+            </Text>
           )}
-        </View>
-      </TouchableOpacity>
-    </View>
+
+          {(event.phone || event.email || event.imageUri) && (
+            <View style={styles.actionChipRow}>
+              {event.phone && (
+                <TouchableOpacity
+                  onPress={handleCall}
+                  activeOpacity={0.75}
+                  style={[
+                    styles.actionChip,
+                    {
+                      backgroundColor: themeColors.primaryTint,
+                      borderColor: themeColors.primaryBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons name="call-outline" size={12} color={themeColors.primary} />
+                  <Text
+                    style={[styles.actionChipText, { color: themeColors.primary }]}
+                    numberOfLines={1}
+                  >
+                    {event.phone}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {event.email && (
+                <TouchableOpacity
+                  onPress={handleEmail}
+                  activeOpacity={0.75}
+                  style={[
+                    styles.actionChip,
+                    {
+                      backgroundColor: themeColors.primaryTint,
+                      borderColor: themeColors.primaryBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons name="mail-outline" size={12} color={themeColors.primary} />
+                  <Text
+                    style={[styles.actionChipText, { color: themeColors.primary }]}
+                    numberOfLines={1}
+                  >
+                    {event.email}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {event.imageUri && (
+                <TouchableOpacity
+                  onPress={handleOpenImage}
+                  activeOpacity={0.75}
+                  style={[
+                    styles.actionChip,
+                    {
+                      backgroundColor: themeColors.amberBg,
+                      borderColor: themeColors.amberBorder,
+                    },
+                  ]}
+                >
+                  <Ionicons name="image-outline" size={12} color={themeColors.amber} />
+                  <Text style={[styles.actionChipText, { color: themeColors.amber }]}>
+                    View Photo
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <ImageViewerModal
+        visible={viewerOpen}
+        imageUri={event.imageUri ?? null}
+        title={event.occasion}
+        onClose={() => setViewerOpen(false)}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   heroCard: {
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     borderWidth: 1.5,
     borderLeftWidth: 4,
     padding: spacing.lg,
@@ -310,7 +493,7 @@ const styles = StyleSheet.create({
   },
   heroOccasion: {
     ...typography.headlineMd,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   metaList: {
     gap: 6,
@@ -324,15 +507,57 @@ const styles = StyleSheet.create({
     ...typography.bodyMd,
     flex: 1,
   },
-  metaStrong: {
+  notesPreview: {
+    ...typography.bodySm,
+    marginTop: spacing.sm,
+  },
+  actionChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  actionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    maxWidth: '100%',
+  },
+  actionChipText: {
+    ...typography.bodySm,
     fontWeight: '600',
+    flexShrink: 1,
+  },
+  attachmentWrap: {
+    marginTop: spacing.md,
+    position: 'relative',
   },
   heroAttachment: {
-    marginTop: spacing.md,
     width: '100%',
-    height: 120,
+    height: 130,
     borderRadius: radius.sm,
     borderWidth: 1,
+  },
+  expandOverlay: {
+    position: 'absolute',
+    right: 8,
+    bottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(15, 30, 54, 0.78)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.xs,
+  },
+  expandText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
   },
   timelineRow: {
     flexDirection: 'row',
@@ -356,7 +581,7 @@ const styles = StyleSheet.create({
   },
   queueCard: {
     flex: 1,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     borderWidth: 1,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -384,7 +609,7 @@ const styles = StyleSheet.create({
   },
   queueOccasion: {
     ...typography.headlineSm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   queueMetaRow: {
     flexDirection: 'row',

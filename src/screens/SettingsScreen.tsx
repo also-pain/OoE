@@ -20,6 +20,11 @@ import {
   getGoogleOAuthConfig,
   isGoogleOAuthConfigured,
 } from '../services/googleSyncService';
+import {
+  checkForGitHubUpdate,
+  CURRENT_APP_VERSION,
+  UpdateCheckResult,
+} from '../services/updateService';
 import { formatReminderLeadTime } from '../utils/eventUtils';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -72,6 +77,9 @@ export function SettingsScreen() {
   const [customHours, setCustomHours] = useState(initialSplit.h);
   const [customMinutes, setCustomMinutes] = useState(initialSplit.m);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const isWeb = Platform.OS === 'web';
   const oauthConfigured = isGoogleOAuthConfigured();
@@ -135,6 +143,21 @@ export function SettingsScreen() {
     const granted = await requestNotificationPermission();
     if (!granted && Platform.OS !== 'web') {
       void Linking.openSettings();
+    }
+  };
+
+  const handleCheckUpdates = async () => {
+    setCheckingUpdate(true);
+    setUpdateError(null);
+    try {
+      const result = await checkForGitHubUpdate();
+      setUpdateResult(result);
+    } catch (err) {
+      setUpdateError(
+        err instanceof Error ? err.message : 'Unable to check for updates.'
+      );
+    } finally {
+      setCheckingUpdate(false);
     }
   };
 
@@ -424,9 +447,9 @@ export function SettingsScreen() {
         </View>
       </View>
 
-      {/* Section 3: Reminders & Alarm */}
+      {/* Section 3: Advance Reminder (Toggle + Lead Time grouped together) */}
       <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>
-        REMINDERS &amp; ALARM
+        ADVANCE REMINDER
       </Text>
       <View
         style={[
@@ -489,46 +512,6 @@ export function SettingsScreen() {
             onValueChange={(val) =>
               void updatePreferences({ notificationsEnabled: val })
             }
-            trackColor={{
-              false: themeColors.borderStrong,
-              true: themeColors.primary,
-            }}
-          />
-        </View>
-
-        <View
-          style={[
-            styles.toggleRow,
-            { borderTopColor: themeColors.border },
-            isWeb && styles.disabledSection,
-          ]}
-        >
-          <View style={styles.toggleIconRow}>
-            <View
-              style={[
-                styles.settingIconBox,
-                { backgroundColor: themeColors.amberBg },
-              ]}
-            >
-              <Ionicons
-                name="alarm-outline"
-                size={18}
-                color={themeColors.amber}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.toggleTitle, { color: themeColors.textPrimary }]}>
-                Alarm Ring at Event Time
-              </Text>
-              <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
-                Ring phone like an alarm when event starts
-              </Text>
-            </View>
-          </View>
-          <Switch
-            value={isWeb ? false : preferences.ringOnEvent}
-            disabled={isWeb}
-            onValueChange={(val) => void updatePreferences({ ringOnEvent: val })}
             trackColor={{
               false: themeColors.borderStrong,
               true: themeColors.primary,
@@ -679,6 +662,171 @@ export function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </View>
+      </View>
+
+      {/* Section 4: Event Alarm (Separate from Advance Reminder) */}
+      <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>
+        EVENT ALARM
+      </Text>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: themeColors.card,
+            borderColor: themeColors.border,
+          },
+          isWeb && styles.disabledSection,
+        ]}
+      >
+        <View style={styles.toggleRowNoMargin}>
+          <View style={styles.toggleIconRow}>
+            <View
+              style={[
+                styles.settingIconBox,
+                { backgroundColor: themeColors.amberBg },
+              ]}
+            >
+              <Ionicons
+                name="alarm-outline"
+                size={18}
+                color={themeColors.amber}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.toggleTitle, { color: themeColors.textPrimary }]}>
+                Alarm Ring at Event Time
+              </Text>
+              <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
+                Ring phone like an alarm when event starts
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={isWeb ? false : preferences.ringOnEvent}
+            disabled={isWeb}
+            onValueChange={(val) => void updatePreferences({ ringOnEvent: val })}
+            trackColor={{
+              false: themeColors.borderStrong,
+              true: themeColors.primary,
+            }}
+          />
+        </View>
+      </View>
+
+      {/* Section 5: App Updates (GitHub Releases) */}
+      <Text style={[styles.sectionLabel, { color: themeColors.textMuted }]}>
+        APP UPDATES
+      </Text>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: themeColors.card,
+            borderColor: themeColors.border,
+          },
+        ]}
+      >
+        <View style={styles.updateHeaderRow}>
+          <View>
+            <Text style={[styles.toggleTitle, { color: themeColors.textPrimary }]}>
+              MySlot v{CURRENT_APP_VERSION}
+            </Text>
+            <Text style={[styles.toggleSubtitle, { color: themeColors.textMuted }]}>
+              Source: github.com/also-pain/OoE
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => void handleCheckUpdates()}
+            disabled={checkingUpdate}
+            style={[
+              styles.secondaryBtn,
+              { borderColor: themeColors.borderStrong, flex: 0, paddingHorizontal: 14 },
+            ]}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name="refresh-outline"
+              size={15}
+              color={themeColors.primary}
+            />
+            <Text style={[styles.secondaryBtnText, { color: themeColors.primary }]}>
+              {checkingUpdate ? 'Checking...' : 'Check for Updates'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {updateError && (
+          <Text
+            style={[
+              styles.demoNote,
+              {
+                color: themeColors.danger,
+                backgroundColor: themeColors.dangerBg,
+                borderColor: themeColors.dangerBorder,
+                marginTop: spacing.md,
+                marginBottom: 0,
+              },
+            ]}
+          >
+            {updateError}
+          </Text>
+        )}
+
+        {updateResult && (
+          <View
+            style={[
+              styles.updateResultBox,
+              updateResult.hasUpdate
+                ? {
+                    backgroundColor: themeColors.amberBg,
+                    borderColor: themeColors.amberBorder,
+                  }
+                : {
+                    backgroundColor: themeColors.emeraldBg,
+                    borderColor: themeColors.emeraldBorder,
+                  },
+            ]}
+          >
+            <Text
+              style={[
+                styles.updateResultTitle,
+                {
+                  color: updateResult.hasUpdate
+                    ? themeColors.amber
+                    : themeColors.emeraldText,
+                },
+              ]}
+            >
+              {updateResult.hasUpdate
+                ? `New version ${updateResult.tagName} is available!`
+                : `You are on the latest version (v${updateResult.currentVersion}).`}
+            </Text>
+            {updateResult.hasUpdate && (
+              <TouchableOpacity
+                onPress={() => void Linking.openURL(updateResult.downloadUrl)}
+                style={[
+                  styles.downloadUpdateBtn,
+                  { backgroundColor: themeColors.primary },
+                ]}
+                activeOpacity={0.85}
+              >
+                <Ionicons
+                  name="download-outline"
+                  size={16}
+                  color={themeColors.textInverse}
+                />
+                <Text
+                  style={[
+                    styles.downloadUpdateText,
+                    { color: themeColors.textInverse },
+                  ]}
+                >
+                  Download {updateResult.assetName ?? `MySlot_${updateResult.tagName}.apk`}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -937,5 +1085,40 @@ const styles = StyleSheet.create({
   },
   disabledSection: {
     opacity: 0.45,
+  },
+  toggleRowNoMargin: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  updateHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  updateResultBox: {
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  updateResultTitle: {
+    ...typography.bodySm,
+    fontWeight: '600',
+  },
+  downloadUpdateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: radius.sm,
+    paddingVertical: 10,
+  },
+  downloadUpdateText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
