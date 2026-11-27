@@ -8,7 +8,7 @@
       "com.ooe.orderevents",
       "com.googleusercontent.apps.655342982666-8pkl9auip4mulmjmdm5jk0h4oj6677vp"
     ],
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",

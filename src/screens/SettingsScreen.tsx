@@ -726,7 +726,7 @@ export function SettingsScreen() {
           },
         ]}
       >
-        <View style={styles.updateHeaderRow}>
+        <View style={styles.updateHeaderCol}>
           <View>
             <Text style={[styles.toggleTitle, { color: themeColors.textPrimary }]}>
               MySlot v{CURRENT_APP_VERSION}
@@ -739,14 +739,14 @@ export function SettingsScreen() {
             onPress={() => void handleCheckUpdates()}
             disabled={checkingUpdate}
             style={[
-              styles.secondaryBtn,
-              { borderColor: themeColors.borderStrong, flex: 0, paddingHorizontal: 14 },
+              styles.checkUpdateBtn,
+              { borderColor: themeColors.borderStrong },
             ]}
             activeOpacity={0.8}
           >
             <Ionicons
               name="refresh-outline"
-              size={15}
+              size={16}
               color={themeColors.primary}
             />
             <Text style={[styles.secondaryBtnText, { color: themeColors.primary }]}>
@@ -1092,11 +1092,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.md,
   },
-  updateHeaderRow: {
+  updateHeaderCol: {
+    gap: spacing.md,
+  },
+  checkUpdateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingVertical: 11,
   },
   updateResultBox: {
     marginTop: spacing.md,
